@@ -4,11 +4,30 @@
 
 { config, pkgs, ... }:
 
+let
+  home-manager = builtins.fetchTarball https://github.com/nix-community/home-manager/archive/release-25.05.tar.gz;
+in
 {
   imports =
     [ # Include the results of the hardware scan.
       ./hardware-configuration.nix
+      (import "${home-manager}/nixos")
+      ./vm.nix
     ];
+  
+  home-manager.useUserPackages = true;
+  home-manager.useGlobalPkgs = true;
+  home-manager.backupFileExtension = "backup";
+  home-manager.users.andrei = import ./home.nix;
+
+  nix.settings.experimental-features = [ "nix-command" "flakes" ];
+
+  # fonts.fontconfig.enable = true;
+  fonts.packages = with pkgs; [
+    nerd-fonts.fira-code
+  ];
+
+  services.flatpak.enable = true;
 
   # Bootloader.
   boot.loader.systemd-boot.enable = true;
@@ -56,8 +75,21 @@
 
     open = true;
     nvidiaSettings = true;
+  };
 
-    package = config.boot.kernelPackages.nvidiaPackages.stable;
+  hardware.nvidia.package = config.boot.kernelPackages.nvidiaPackages.mkDriver {
+    version = "580.76.05";
+    sha256_64bit = "sha256-IZvmNrYJMbAhsujB4O/4hzY8cx+KlAyqh7zAVNBdl/0=";
+    sha256_aarch64 = "sha256-NL2DswzVWQQMVM092NmfImqKbTk9VRgLL8xf4QEvGAQ=";
+    openSha256 = "sha256-xEPJ9nskN1kISnSbfBigVaO6Mw03wyHebqQOQmUg/eQ=";
+    settingsSha256 = "sha256-ll7HD7dVPHKUyp5+zvLeNqAb6hCpxfwuSyi+SAXapoQ=";
+    persistencedSha256 = "sha256-bs3bUi8LgBu05uTzpn2ugcNYgR5rzWEPaTlgm0TIpHY=";
+  };
+
+  hardware.graphics = {
+    enable = true;
+    enable32Bit = true;
+    extraPackages = with pkgs; [ vaapiVdpau ];
   };
 
   hardware.nvidia.prime = {
@@ -73,24 +105,22 @@
   programs.steam.enable = true;
   programs.steam.gamescopeSession.enable = true;
 
-  boot.kernelPackages = pkgs.linuxPackages_6_12;
+  boot.kernelPackages = pkgs.linuxPackages_6_16;
 
   environment.systemPackages = with pkgs; [
     mangohud
     protonup
     brave
-    vim
     btop
     nvtopPackages.full  
-    bottles
+    # bottles
     (writeTextDir "share/sddm/themes/breeze/theme.conf.user" ''
       [General]
       background=${pkgs.kdePackages.plasma-workspace-wallpapers}/share/wallpapers/DarkestHour/contents/images/2560x1600.jpg
     '')
     lutris
-    # wine
     lenovo-legion
-    linuxKernel.packages.linux_6_12.lenovo-legion-module
+    linuxKernel.packages.linux_6_15.lenovo-legion-module
     lm_sensors
   ];
 
@@ -178,7 +208,7 @@
   # services.openssh.enable = true;
 
   # Open ports in the firewall.
-  # networking.firewall.allowedTCPPorts = [ ... ];
+  networking.firewall.allowedTCPPorts = [ 25565 ];
   # networking.firewall.allowedUDPPorts = [ ... ];
   # Or disable the firewall altogether.
   # networking.firewall.enable = false;
