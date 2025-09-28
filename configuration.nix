@@ -78,12 +78,12 @@ in
   };
 
   hardware.nvidia.package = config.boot.kernelPackages.nvidiaPackages.mkDriver {
-    version = "580.76.05";
-    sha256_64bit = "sha256-IZvmNrYJMbAhsujB4O/4hzY8cx+KlAyqh7zAVNBdl/0=";
-    sha256_aarch64 = "sha256-NL2DswzVWQQMVM092NmfImqKbTk9VRgLL8xf4QEvGAQ=";
-    openSha256 = "sha256-xEPJ9nskN1kISnSbfBigVaO6Mw03wyHebqQOQmUg/eQ=";
-    settingsSha256 = "sha256-ll7HD7dVPHKUyp5+zvLeNqAb6hCpxfwuSyi+SAXapoQ=";
-    persistencedSha256 = "sha256-bs3bUi8LgBu05uTzpn2ugcNYgR5rzWEPaTlgm0TIpHY=";
+    version = "580.82.09";
+    sha256_64bit = "sha256-Puz4MtouFeDgmsNMKdLHoDgDGC+QRXh6NVysvltWlbc=";
+    sha256_aarch64 = "sha256-6tHiAci9iDTKqKrDIjObeFdtrlEwjxOHJpHfX4GMEGQ=";
+    openSha256 = "sha256-YB+mQD+oEDIIDa+e8KX1/qOlQvZMNKFrI5z3CoVKUjs=";
+    settingsSha256 = "sha256-um53cr2Xo90VhZM1bM2CH4q9b/1W2YOqUcvXPV6uw2s=";
+    persistencedSha256 = "sha256-lbYSa97aZ+k0CISoSxOMLyyMX//Zg2Raym6BC4COipU=";
   };
 
   hardware.graphics = {
@@ -120,7 +120,7 @@ in
     '')
     lutris
     lenovo-legion
-    linuxKernel.packages.linux_6_15.lenovo-legion-module
+    linuxKernel.packages.linux_6_16.lenovo-legion-module
     lm_sensors
   ];
 
@@ -128,7 +128,8 @@ in
     [ lenovo-legion-module ];
   
   boot.kernelModules = [ 
-    "lenovo-legion-module" 
+    # "lenovo-legion-module" 
+    "legion-laptop"
   ];
 
   environment.sessionVariables = {
@@ -166,6 +167,16 @@ in
     # no need to redefine it in your config for now)
     #media-session.enable = true;
   };
+
+  services.pipewire.extraConfig.pipewire."92-stable-buffer" = {
+    context.properties = {
+      default.clock.allowed-rates = [ 44100 48000 ];
+      default.clock.quantum = 1024;
+      default.clock.min-quantum = 256;
+      default.clock.max-quantum = 2048;
+    };
+  };
+
 
   # Enable touchpad support (enabled default in most desktopManager).
   # services.xserver.libinput.enable = true;
