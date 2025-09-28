@@ -6,7 +6,7 @@
   home.stateVersion = "25.05";
 
   home.packages = with pkgs; [
-    vscode
+    vscode-fhs
     discord
     prismlauncher
     # emacs
@@ -16,5 +16,7 @@
     ripgrep
     fd
     p7zip
+    ntfs3g
+    libreoffice-qt6-fresh
   ];
 }
