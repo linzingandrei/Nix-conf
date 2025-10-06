@@ -33,6 +33,11 @@ in
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
+  boot.kernelParams = [
+    # "usbcore.autosuspend=-1"
+    "amdgpu.dcdebugmask=0x400"
+  ];
+
   networking.hostName = "nixos"; # Define your hostname.
   # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
 
@@ -78,12 +83,12 @@ in
   };
 
   hardware.nvidia.package = config.boot.kernelPackages.nvidiaPackages.mkDriver {
-    version = "580.82.09";
-    sha256_64bit = "sha256-Puz4MtouFeDgmsNMKdLHoDgDGC+QRXh6NVysvltWlbc=";
-    sha256_aarch64 = "sha256-6tHiAci9iDTKqKrDIjObeFdtrlEwjxOHJpHfX4GMEGQ=";
-    openSha256 = "sha256-YB+mQD+oEDIIDa+e8KX1/qOlQvZMNKFrI5z3CoVKUjs=";
-    settingsSha256 = "sha256-um53cr2Xo90VhZM1bM2CH4q9b/1W2YOqUcvXPV6uw2s=";
-    persistencedSha256 = "sha256-lbYSa97aZ+k0CISoSxOMLyyMX//Zg2Raym6BC4COipU=";
+    version = "580.95.05";
+    sha256_64bit = "sha256-hJ7w746EK5gGss3p8RwTA9VPGpp2lGfk5dlhsv4Rgqc=";
+    sha256_aarch64 = "sha256-zLRCbpiik2fGDa+d80wqV3ZV1U1b4lRjzNQJsLLlICk=";
+    openSha256 = "sha256-RFwDGQOi9jVngVONCOB5m/IYKZIeGEle7h0+0yGnBEI=";
+    settingsSha256 = "sha256-F2wmUEaRrpR1Vz0TQSwVK4Fv13f3J9NJLtBe4UP2f14=";
+    persistencedSha256 = "sha256-QCwxXQfG/Pa7jSTBB0xD3lsIofcerAWWAHKvWjWGQtg=";
   };
 
   hardware.graphics = {
@@ -107,6 +112,11 @@ in
 
   boot.kernelPackages = pkgs.linuxPackages_6_16;
 
+  programs.hyprland = {
+    enable = true;
+    xwayland.enable = true;
+  };
+
   environment.systemPackages = with pkgs; [
     mangohud
     protonup
@@ -122,7 +132,27 @@ in
     lenovo-legion
     linuxKernel.packages.linux_6_16.lenovo-legion-module
     lm_sensors
+    kitty
+    waybar
+    mako
+    libnotify
+    swww
+    rofi-wayland
+    networkmanagerapplet
+    pavucontrol
+    blueman
+    brightnessctl
+    nnn
+    udiskie
+    wl-clipboard
+    grim
+    slurp
   ];
+
+  hardware.bluetooth.enable = true;
+
+  xdg.portal.enable = true;
+  xdg.portal.extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
 
   boot.extraModulePackages = with config.boot.kernelPackages;
     [ lenovo-legion-module ];
@@ -133,8 +163,9 @@ in
   ];
 
   environment.sessionVariables = {
-    STEAM_EXTRA_COMPAT_TOOLS_PATHS = 
-      "/home/andrei/.steam/root/compatibilitytools.d";
+    STEAM_EXTRA_COMPAT_TOOLS_PATHS = "/home/andrei/.steam/root/compatibilitytools.d";
+    WLR_NO_HARDWARE_CURSORS = "1";
+    NIXOS_OZONE_WL = "1";
   };
 
   programs.gamemode.enable = true;
@@ -170,22 +201,25 @@ in
 
   services.pipewire.extraConfig.pipewire."92-stable-buffer" = {
     context.properties = {
-      default.clock.allowed-rates = [ 44100 48000 ];
-      default.clock.quantum = 1024;
-      default.clock.min-quantum = 256;
-      default.clock.max-quantum = 2048;
+      # default.clock.allowed-rates = [ 44100 48000 ];
+      default.clock.rate = 48000;
+      default.clock.quantum = 2048;
+      default.clock.min-quantum = 1024;
+      default.clock.max-quantum = 4096;
     };
   };
 
 
   # Enable touchpad support (enabled default in most desktopManager).
   # services.xserver.libinput.enable = true;
+  programs.zsh.enable = true;
 
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.andrei = {
     isNormalUser = true;
     description = "andrei";
     extraGroups = [ "networkmanager" "wheel" ];
+    shell = pkgs.zsh;
     packages = with pkgs; [
       kdePackages.kate
     #  thunderbird
@@ -219,7 +253,7 @@ in
   # services.openssh.enable = true;
 
   # Open ports in the firewall.
-  networking.firewall.allowedTCPPorts = [ 25565 ];
+  # networking.firewall.allowedTCPPorts = [ 25565 ];
   # networking.firewall.allowedUDPPorts = [ ... ];
   # Or disable the firewall altogether.
   # networking.firewall.enable = false;
