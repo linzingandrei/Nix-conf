@@ -18,5 +18,15 @@
     p7zip
     ntfs3g
     libreoffice-qt6-fresh
+    usbutils
+    obsidian
   ];
+
+  xdg.mimeApps = {
+    enable = true;
+    defaultApplications = {
+      "application/pdf" = "org.kde.okular.desktop";
+      "image/png" = "org.kde.okular.desktop";
+    };
+  };
 }
