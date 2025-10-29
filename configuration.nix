@@ -33,11 +33,6 @@ in
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
-  boot.kernelParams = [
-    # "usbcore.autosuspend=-1"
-    "amdgpu.dcdebugmask=0x400"
-  ];
-
   networking.hostName = "nixos"; # Define your hostname.
   # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
 
@@ -75,6 +70,11 @@ in
     "nvidia"
   ];
 
+  virtualisation.vmware.host.enable = true;
+  virtualisation.vmware.host.package = pkgs.vmware-workstation.overrideAttrs (_: {
+    src = /nix/store/km2lkhqcqw06r74qvz1iqa9m925pcw6q-VMware-Workstation-Full-17.6.4-24832109.x86_64.bundle;
+  });
+
   hardware.nvidia = {
     modesetting.enable = true;
 
@@ -110,7 +110,7 @@ in
   programs.steam.enable = true;
   programs.steam.gamescopeSession.enable = true;
 
-  boot.kernelPackages = pkgs.linuxPackages_6_16;
+  boot.kernelPackages = pkgs.linuxPackages_6_12;
 
   programs.hyprland = {
     enable = true;
@@ -130,7 +130,7 @@ in
     '')
     lutris
     lenovo-legion
-    linuxKernel.packages.linux_6_16.lenovo-legion-module
+    linuxKernel.packages.linux_6_12.lenovo-legion-module
     lm_sensors
     kitty
     waybar
@@ -147,9 +147,23 @@ in
     wl-clipboard
     grim
     slurp
+    hyprlock
   ];
 
-  hardware.bluetooth.enable = true;
+  services.earlyoom = {
+    enable = true;
+    freeSwapThreshold = 2;
+    freeMemThreshold = 2;
+    extraArgs = [
+        "-g" "--avoid" "^(hyprland|waybar|kitty|systemd|virt-manager|virt-viewer|libvirtd|virtqemud|qemu-system.*)$"
+        "--prefer" "^(brave|electron|chromium|libreoffice|gimp|steam)$"
+    ];
+  };
+
+  hardware.bluetooth = {
+    enable = true;
+    powerOnBoot = false;
+  };
 
   xdg.portal.enable = true;
   xdg.portal.extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
@@ -157,10 +171,25 @@ in
   boot.extraModulePackages = with config.boot.kernelPackages;
     [ lenovo-legion-module ];
   
-  boot.kernelModules = [ 
+  boot.initrd.kernelModules = [ "lz4" ];
+  boot.initrd.systemd.enable = true;
+
+  boot = {
+    kernelModules = [ 
     # "lenovo-legion-module" 
-    "legion-laptop"
-  ];
+      "legion-laptop"
+    ];
+    
+    kernelParams = [
+      "zswap.enabled=1" # enables zswap
+      "zswap.compressor=lz4" # compression algorithm
+      "zswap.max_pool_percent=20" # maximum percentage of RAM that zswap is allowed to use
+      "zswap.shrinker_enabled=1" # whether to shrink the pool proactively on high memory pressure
+
+      # "usbcore.autosuspend=-1"
+      "amdgpu.dcdebugmask=0x400"
+    ];
+  };
 
   environment.sessionVariables = {
     STEAM_EXTRA_COMPAT_TOOLS_PATHS = "/home/andrei/.steam/root/compatibilitytools.d";
