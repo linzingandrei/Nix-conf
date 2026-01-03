@@ -5,7 +5,7 @@
 { config, pkgs, ... }:
 
 let
-  home-manager = builtins.fetchTarball https://github.com/nix-community/home-manager/archive/release-25.05.tar.gz;
+  home-manager = builtins.fetchTarball https://github.com/nix-community/home-manager/archive/release-25.11.tar.gz;
 in
 {
   imports =
@@ -21,6 +21,7 @@ in
   home-manager.users.andrei = import ./home.nix;
 
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
+  nix.settings.trusted-users = [ "root" "andrei" ];
 
   # fonts.fontconfig.enable = true;
   fonts.packages = with pkgs; [
@@ -70,10 +71,10 @@ in
     "nvidia"
   ];
 
-  virtualisation.vmware.host.enable = true;
-  virtualisation.vmware.host.package = pkgs.vmware-workstation.overrideAttrs (_: {
-    src = /nix/store/km2lkhqcqw06r74qvz1iqa9m925pcw6q-VMware-Workstation-Full-17.6.4-24832109.x86_64.bundle;
-  });
+  # virtualisation.vmware.host.enable = true;
+  # virtualisation.vmware.host.package = pkgs.vmware-workstation.overrideAttrs (_: {
+  #   src = /nix/store/km2lkhqcqw06r74qvz1iqa9m925pcw6q-VMware-Workstation-Full-17.6.4-24832109.x86_64.bundle;
+  # });
 
   hardware.nvidia = {
     modesetting.enable = true;
@@ -83,18 +84,18 @@ in
   };
 
   hardware.nvidia.package = config.boot.kernelPackages.nvidiaPackages.mkDriver {
-    version = "580.95.05";
-    sha256_64bit = "sha256-hJ7w746EK5gGss3p8RwTA9VPGpp2lGfk5dlhsv4Rgqc=";
-    sha256_aarch64 = "sha256-zLRCbpiik2fGDa+d80wqV3ZV1U1b4lRjzNQJsLLlICk=";
-    openSha256 = "sha256-RFwDGQOi9jVngVONCOB5m/IYKZIeGEle7h0+0yGnBEI=";
-    settingsSha256 = "sha256-F2wmUEaRrpR1Vz0TQSwVK4Fv13f3J9NJLtBe4UP2f14=";
-    persistencedSha256 = "sha256-QCwxXQfG/Pa7jSTBB0xD3lsIofcerAWWAHKvWjWGQtg=";
+    version = "590.44.01";
+    sha256_64bit = "sha256-VbkVaKwElaazojfxkHnz/nN/5olk13ezkw/EQjhKPms=";
+    sha256_aarch64 = "sha256-gpqz07aFx+lBBOGPMCkbl5X8KBMPwDqsS+knPHpL/5g=";
+    openSha256 = "sha256-ft8FEnBotC9Bl+o4vQA1rWFuRe7gviD/j1B8t0MRL/o=";
+    settingsSha256 = "sha256-wVf1hku1l5OACiBeIePUMeZTWDQ4ueNvIk6BsW/RmF4=";
+    persistencedSha256 = "sha256-nHzD32EN77PG75hH9W8ArjKNY/7KY6kPKSAhxAWcuS4=";
   };
 
   hardware.graphics = {
     enable = true;
     enable32Bit = true;
-    extraPackages = with pkgs; [ vaapiVdpau ];
+    extraPackages = with pkgs; [ libva-vdpau-driver ];
   };
 
   hardware.nvidia.prime = {
@@ -110,7 +111,7 @@ in
   programs.steam.enable = true;
   programs.steam.gamescopeSession.enable = true;
 
-  boot.kernelPackages = pkgs.linuxPackages_6_12;
+  boot.kernelPackages = pkgs.linuxPackages_6_18;
 
   programs.hyprland = {
     enable = true;
@@ -119,7 +120,7 @@ in
 
   environment.systemPackages = with pkgs; [
     mangohud
-    protonup
+    protonup-ng
     brave
     btop
     nvtopPackages.full  
@@ -130,25 +131,37 @@ in
     '')
     lutris
     lenovo-legion
-    linuxKernel.packages.linux_6_12.lenovo-legion-module
+    linuxKernel.packages.linux_6_18.lenovo-legion-module
     lm_sensors
     kitty
     waybar
     mako
     libnotify
-    swww
-    rofi-wayland
+    # swww
+    rofi
     networkmanagerapplet
     pavucontrol
     blueman
     brightnessctl
-    nnn
+    # nnn
     udiskie
     wl-clipboard
     grim
     slurp
     hyprlock
+    remmina
+    looking-glass-client
+    hyprpaper
+    zellij
+    pywal
+    hyprlock
+    powertop
+    lm_sensors 
+    killall
+    devenv
   ];
+
+  programs.yazi.enable = true;
 
   services.earlyoom = {
     enable = true;
@@ -171,12 +184,23 @@ in
   boot.extraModulePackages = with config.boot.kernelPackages;
     [ lenovo-legion-module ];
   
-  boot.initrd.kernelModules = [ "lz4" ];
+  boot.initrd.kernelModules = [
+    # "vfio_pci"
+    # "vfio"
+    # "vfio_iommu_type1"
+
+    "nvidia"
+    "nvidia_modeset"
+    "nvidia_uvm"
+    "nvidia_drm"
+
+    "lz4"
+  ];
+
   boot.initrd.systemd.enable = true;
 
   boot = {
     kernelModules = [ 
-    # "lenovo-legion-module" 
       "legion-laptop"
     ];
     
@@ -186,8 +210,15 @@ in
       "zswap.max_pool_percent=20" # maximum percentage of RAM that zswap is allowed to use
       "zswap.shrinker_enabled=1" # whether to shrink the pool proactively on high memory pressure
 
+      # "amd_iommu=on"
+      # "vfio-pci.ids=10de:2560,10de:228e"
+
       # "usbcore.autosuspend=-1"
-      "amdgpu.dcdebugmask=0x400"
+      # "amdgpu.dcdebugmask=0x400"
+      # "amdgpu.sg_display=0"
+
+      # "snd_hda_intel.dmic_detect=0"
+      # "snd_hda_intel.enable_msi=1"
     ];
   };
 
@@ -231,10 +262,10 @@ in
   services.pipewire.extraConfig.pipewire."92-stable-buffer" = {
     context.properties = {
       # default.clock.allowed-rates = [ 44100 48000 ];
-      default.clock.rate = 48000;
-      default.clock.quantum = 2048;
-      default.clock.min-quantum = 1024;
-      default.clock.max-quantum = 4096;
+      # default.clock.rate = 48000;
+      default.clock.quantum = 1024;
+      # default.clock.min-quantum = 1024;
+      # default.clock.max-quantum = 4096;
     };
   };
 
