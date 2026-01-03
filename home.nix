@@ -3,7 +3,7 @@
 {
   home.username = "andrei";
   home.homeDirectory = "/home/andrei";
-  home.stateVersion = "25.05";
+  home.stateVersion = "25.11";
 
   home.packages = with pkgs; [
     vscode-fhs
