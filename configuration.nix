@@ -1,6 +1,6 @@
 # Edit this configuration file to define what should be installed on
 # your system.  Help is available in the configuration.nix(5) man page
-# and in the NixOS manual (accessible by running ‘nixos-help’).
+# and in the NixOS manual (accessible by running  nixos-help ).
 
 { config, pkgs, ... }:
 
@@ -64,17 +64,49 @@ in
 
   # Enable the X11 windowing system.
   # You can disable this if you're only using the Wayland session.
-  services.xserver.enable = true;
+  services.xserver.enable = false;
 
+  services.logind.settings.Login = {
+    HandleLidSwitch = "lock";
+    HandlePowerKey = "ignore";
+    HandleLidSwitchDocked = "lock";
+  };
+
+  services.udisks2.enable = true;
+
+  services.greetd = {
+    enable = true;
+    settings = rec {
+      initial_session = {
+        command = "uwsm start default"; 
+        user = "andrei";
+      };
+      default_session = initial_session;
+    };
+  };
+
+  environment.loginShellInit = ''
+    if uwsm check may-start; then
+      exec uwsm start hyprland-uwsm.desktop
+    fi
+  '';
+  
   services.xserver.videoDrivers = [
     "amdgpu"
     "nvidia"
   ];
 
-  # virtualisation.vmware.host.enable = true;
-  # virtualisation.vmware.host.package = pkgs.vmware-workstation.overrideAttrs (_: {
-  #   src = /nix/store/km2lkhqcqw06r74qvz1iqa9m925pcw6q-VMware-Workstation-Full-17.6.4-24832109.x86_64.bundle;
-  # });
+  virtualisation.vmware.host.enable = true;
+  virtualisation.vmware.host.package = pkgs.vmware-workstation.overrideAttrs (_: {
+    src = /nix/store/pvaa1sy0rdlhmkjsqvh0c27jbfsn4gj3-VMware-Workstation-Full-17.6.4-24832109.x86_64.bundle;
+  });
+
+  virtualisation.waydroid = {
+    enable = true;
+    package = pkgs.waydroid-nftables;
+  };
+
+  virtualisation.docker.enable = true;
 
   hardware.nvidia = {
     modesetting.enable = true;
@@ -115,6 +147,7 @@ in
 
   programs.hyprland = {
     enable = true;
+    withUWSM = true;
     xwayland.enable = true;
   };
 
@@ -125,15 +158,14 @@ in
     btop
     nvtopPackages.full  
     # bottles
-    (writeTextDir "share/sddm/themes/breeze/theme.conf.user" ''
-      [General]
-      background=${pkgs.kdePackages.plasma-workspace-wallpapers}/share/wallpapers/DarkestHour/contents/images/2560x1600.jpg
-    '')
+    # (writeTextDir "share/sddm/themes/breeze/theme.conf.user" ''
+    #   [General]
+    #   background=${pkgs.kdePackages.plasma-workspace-wallpapers}/share/wallpapers/DarkestHour/contents/images/2560x1600.jpg
+    # '')
     lutris
     lenovo-legion
     linuxKernel.packages.linux_6_18.lenovo-legion-module
     lm_sensors
-    kitty
     waybar
     mako
     libnotify
@@ -141,6 +173,7 @@ in
     rofi
     networkmanagerapplet
     pavucontrol
+    kitty
     blueman
     brightnessctl
     # nnn
@@ -149,16 +182,28 @@ in
     grim
     slurp
     hyprlock
+    hypridle
     remmina
     looking-glass-client
     hyprpaper
     zellij
     pywal
-    hyprlock
     powertop
     lm_sensors 
     killall
     devenv
+    virt-v2v
+    bibata-cursors
+    direnv
+    emacs
+    git
+    ripgrep
+    coreutils
+    fd
+    clang
+    gnome-software
+    gimp
+    winboat
   ];
 
   programs.yazi.enable = true;
@@ -185,14 +230,14 @@ in
     [ lenovo-legion-module ];
   
   boot.initrd.kernelModules = [
-    # "vfio_pci"
-    # "vfio"
-    # "vfio_iommu_type1"
+    "vfio_pci"
+    "vfio"
+    "vfio_iommu_type1"
 
-    "nvidia"
-    "nvidia_modeset"
-    "nvidia_uvm"
-    "nvidia_drm"
+    # "nvidia"
+    # "nvidia_modeset"
+    # "nvidia_uvm"
+    # "nvidia_drm"
 
     "lz4"
   ];
@@ -210,8 +255,8 @@ in
       "zswap.max_pool_percent=20" # maximum percentage of RAM that zswap is allowed to use
       "zswap.shrinker_enabled=1" # whether to shrink the pool proactively on high memory pressure
 
-      # "amd_iommu=on"
-      # "vfio-pci.ids=10de:2560,10de:228e"
+      "amd_iommu=on"
+      "vfio-pci.ids=10de:2560,10de:228e"
 
       # "usbcore.autosuspend=-1"
       # "amdgpu.dcdebugmask=0x400"
@@ -228,11 +273,16 @@ in
     NIXOS_OZONE_WL = "1";
   };
 
+  environment.variables = {
+    XCURSOR_THEME = "Bibata-Modern-Classic";
+    XCURSOR_SIZE = "24";
+  };
+
   programs.gamemode.enable = true;
 
   # Enable the KDE Plasma Desktop Environment.
-  services.displayManager.sddm.enable = true;
-  services.desktopManager.plasma6.enable = true;
+  services.displayManager.sddm.enable = false;
+  services.desktopManager.plasma6.enable = false;
 
   # Configure keymap in X11
   services.xserver.xkb = {
@@ -274,11 +324,11 @@ in
   # services.xserver.libinput.enable = true;
   programs.zsh.enable = true;
 
-  # Define a user account. Don't forget to set a password with ‘passwd’.
+  # Define a user account. Don't forget to set a password with  passwd .
   users.users.andrei = {
     isNormalUser = true;
     description = "andrei";
-    extraGroups = [ "networkmanager" "wheel" ];
+    extraGroups = [ "networkmanager" "wheel" "docker" ];
     shell = pkgs.zsh;
     packages = with pkgs; [
       kdePackages.kate
@@ -317,10 +367,13 @@ in
   # networking.firewall.allowedUDPPorts = [ ... ];
   # Or disable the firewall altogether.
   # networking.firewall.enable = false;
+  # networking.extraHosts = ''
+  #   192.168.17.128 www.badstore.net
+  # '';
 
   # This value determines the NixOS release from which the default
   # settings for stateful data, like file locations and database versions
-  # on your system were taken. It‘s perfectly fine and recommended to leave
+  # on your system were taken. It s perfectly fine and recommended to leave
   # this value at the release version of the first install of this system.
   # Before changing this value read the documentation for this option
   # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
